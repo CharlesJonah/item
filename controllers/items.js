@@ -26,45 +26,82 @@ module.exports ={
         ItemModel.findOne({_id:req.params.id},
             function(err, item){
                 if (err){
-                    res.status(500).send({sucess:false, message:err});
+                    res.status(500).send({sucess:false, message:'Failed'});
                 }
-                else if(item){
+                else {
                     res.status(200).send({sucess:true, message:item});
-                }
-                else{
-                    res.status(404).send({sucess:true, message:'Sorry, could not find item with the supplied id'});
                 }
             }
         );
     },
     getItems(req, res){
-        ItemModel.find({},
-            function(err, item){
+        let page = parseInt(req.query.page);
+        let limit = parseInt(req.query.limit);
+
+        if (page && limit) {
+            ItemModel.paginate({}, { page: page, limit: limit}, function (err, item) {
                 if (err){
                     res.status(500).send({sucess:false, message:err});
                 }
-                else if(item){
+                else {
                     res.status(200).send({sucess:true, message:item});
                 }
-                else{
-                    res.status(404).send({sucess:true, message:'Sorry, no items found'});
+            });
+          }
+        else {
+            ItemModel.find({}, function (err, item) {
+                if (err){
+                    res.status(500).send({sucess:false, message:err});
                 }
-            }
-        );
+                else {
+                    res.status(200).send({sucess:true, message:item});
+                }
+            });
+          }
     },
     updateItem(req, res) {
-        ItemModel.findOneAndUpdate({ _id: req.params.id }, req.body, { new: true }, function (err, message) {
-          if (err)
-            res.status(500).send({ success: false, message: err });
-          res.status(200).send({ success: true, message: message });
+        ItemModel.findOneAndUpdate({ _id: req.params.id }, req.body, { new: true }, function (err, item) {
+            if (err){
+                res.status(500).send({sucess:false, message:'Failed'});
+            }
+            else {
+                res.status(200).send({sucess:true, message:item});
+            }
         });
     
-      },    
+      },
+    searchByCategory(req, res) {
+        let category = req.query.category;
+        let page = parseInt(req.query.page);
+        let limit = parseInt(req.query.limit);
+        if (category) {
+          if (page && limit) {
+            ItemModel.paginate({ category:new RegExp(category, "i") }, { page: page, limit: limit}, function (err, message) {
+              if (err)
+                res.status(500).send({ success: false, message: err });
+              res.status(200).send({ success: true, message: message });
+            });
+          }
+          else {
+            ItemModel.find({ category:new RegExp(category, "i") }, function (err, message) {
+              if (err)
+                res.status(500).send({ success: false, message: err });
+              res.status(200).send({ success: true, message: message });
+            });
+          }
+        }
+        else {
+          res.status(400).send({ success: false, message: 'Bad Request' });
+        }
+      },      
     deleteItem(req, res){
-        ItemModel.remove({ _id: req.params.id }, function (err, message) {
-            if (err)
-              res.status(500).send({ success: false, message: err });
+        ItemModel.findByIdAndRemove(req.params.id , function (err, message) {
+            if (err){
+              res.status(500).send({ success: false, message: 'Failed' });
+            }
+            else{
             res.status(200).send({ success: true, message: 'Item deleted successfully' });
+            }
           });
       
     }
